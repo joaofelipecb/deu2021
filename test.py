@@ -1,4 +1,6 @@
 import sys
+import p23control._Condition
+import p23control._Symbol
 
 if len(sys.argv) != 2:
     print('Nao implementado')
@@ -10,16 +12,30 @@ if arg.find('.') == -1:
     print('Nao implementado')
     quit()
     
-moduleName = arg[0:arg.find('.')]
-functionName = arg[arg.find('.')+1:]
+callFunction = p23control._Symbol.resolve('p23control.'+arg)
+testFunction = p23control._Symbol.resolve('p18test.'+arg)
 
-namespaceControl = __import__('p23control.'+moduleName)
+if len(testFunction) != 2:
+    print('Nao implementado')
+    quit()
 
-callFunction = namespaceControl.__getattribute__(moduleName).__getattribute__(functionName)
+argsFunction = testFunction[0]
+argsFunctionParsed = {}
+for argName, argValue in argsFunction.items():
+    if not isinstance(argValue,dict) or (isinstance(argValue,dict) and not '_type' in argValue):
+        argsFunctionParsed[argName] = argValue
+    else:
+        symbol = p23control._Symbol.resolve(argValue['_type'])
+        del argValue['_type']
+        argsFunctionParsed[argName] = symbol(**argValue)
+    
+finalFunction = testFunction[1]
+if not '_condition' in finalFunction:
+    print('Nao implementado')
+    quit()
 
-namespaceTest = __import__('p18test.'+moduleName)
+result = callFunction(**argsFunctionParsed)
 
-testFunction = namespaceTest.__getattribute__(moduleName).__getattribute__(functionName)
-argFunction = testFunction[0]
+condition = p23control._Condition.parse(finalFunction['_condition'])
+print(p23control._Condition.verify(condition,argsFunctionParsed))
 
-callFunction(**argFunction)
